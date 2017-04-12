@@ -9,13 +9,13 @@ import android.view.ViewGroup;
 
 
 /**
- * A simple {@link Fragment} subclass.
+ * Camera preview fragment
  */
 public class CameraPreviewFragment extends Fragment {
 
 
     public CameraPreviewFragment() {
-        // Required empty public constructor
+
     }
 
 
