@@ -55,8 +55,12 @@ public class CameraController {
         }
     }
 
-    public Camera getCamera() {
-        return mCamera;
+    public void switchCameraID() {
+        if (cameraID == Camera.CameraInfo.CAMERA_FACING_BACK) {
+            cameraID = Camera.CameraInfo.CAMERA_FACING_FRONT;
+        } else {
+            cameraID = Camera.CameraInfo.CAMERA_FACING_BACK;
+        }
     }
 
     public Camera.Parameters getCameraParameters() {
