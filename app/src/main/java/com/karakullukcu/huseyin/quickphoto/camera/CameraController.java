@@ -2,9 +2,13 @@ package com.karakullukcu.huseyin.quickphoto.camera;
 
 import android.hardware.Camera;
 import android.util.Log;
+import android.hardware.Camera.Size;
 import android.view.SurfaceHolder;
 
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * Created by pc on 12.04.2017.
@@ -91,5 +95,29 @@ public class CameraController {
     public void stopPreview() {
         if (mCamera != null)
             mCamera.stopPreview();
+    }
+
+    public Size getOptimalSize(List<Size> sizes, int width, int height, float ratio) {
+        List<Size> optimalSizes = new ArrayList<>();
+        for (Size size : sizes) {
+            if (Math.max(size.height,size.width) == Math.min(size.height,size.width) * ratio
+                    && Math.max(size.height,size.width) >= Math.max(width,height)
+                    && Math.min(size.height,size.width) >= Math.min(width,height) ) {
+                optimalSizes.add(size);
+            }
+        }
+
+        if (optimalSizes.size() > 0) {
+            return Collections.min(optimalSizes, new CompareSizesByArea());
+        } else {
+            return Collections.max(sizes, new CompareSizesByArea());
+        }
+    }
+
+    private static class CompareSizesByArea implements Comparator<Size> {
+        @Override
+        public int compare(Size lhs, Size rhs) {
+            return Long.signum((long) lhs.width * lhs.height - (long) rhs.width * rhs.height);
+        }
     }
 }

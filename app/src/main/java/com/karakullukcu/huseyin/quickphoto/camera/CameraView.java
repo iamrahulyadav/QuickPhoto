@@ -3,6 +3,7 @@ package com.karakullukcu.huseyin.quickphoto.camera;
 import android.content.Context;
 import android.hardware.Camera;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -17,6 +18,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private SurfaceHolder mHolder;
     private CameraController cameraController;
     private Camera.Parameters cameraParameters;
+    private DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+    private Camera.Size mPreviewSizes;
 
 
     public CameraView(Context context) {
@@ -46,6 +49,19 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
     }
 
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int width = MeasureSpec.getSize(widthMeasureSpec);
+        int height = MeasureSpec.getSize(heightMeasureSpec);
+        Log.d(TAG,"measure width: "+width+" measure height: "+height );
+        setMeasuredDimension(width,height);
+
+        float displayRatio = (float) Math.max(displayMetrics.widthPixels,displayMetrics.heightPixels) /
+                (float) Math.min(displayMetrics.widthPixels,displayMetrics.heightPixels);
+
+        mPreviewSizes = cameraController.getOptimalSize(cameraParameters.getSupportedPreviewSizes(),
+                width, height, displayRatio);
+    }
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
@@ -66,6 +82,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         // set preview size and make any resize, rotate or
         // reformatting changes here
         cameraController.setCameraOrientation(90);
+        cameraParameters.setPreviewSize(mPreviewSizes.width,mPreviewSizes.height);
+        Log.d(TAG,"preview width: "+mPreviewSizes.width+" preview height: "+mPreviewSizes.height);
+        cameraController.setCameraParameters(cameraParameters);
         // start preview with new settings
         try {
             cameraController.startPreview(surfaceHolder);
