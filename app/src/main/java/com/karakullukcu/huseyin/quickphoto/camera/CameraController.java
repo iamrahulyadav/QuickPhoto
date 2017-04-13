@@ -108,6 +108,10 @@ public class CameraController {
         }
 
         if (optimalSizes.size() > 0) {
+            /**
+             * I use min optimal size for this app.
+             * If you want better picture resolution and preview size, you might want get max optimal size.
+             */
             return Collections.min(optimalSizes, new CompareSizesByArea());
         } else {
             return Collections.max(sizes, new CompareSizesByArea());
