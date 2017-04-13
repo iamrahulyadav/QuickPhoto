@@ -7,26 +7,26 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-
-import static android.R.attr.width;
 
 /**
  * Created by pc on 12.04.2017.
  */
 
-public class CameraView extends SurfaceView implements SurfaceHolder.Callback {
+public class CameraView extends SurfaceView implements SurfaceHolder.Callback, ScaleGestureDetector.OnScaleGestureListener {
     private static final String TAG = CameraView.class.getName();
 
     private SurfaceHolder mHolder;
-    private CameraController cameraController;
-    private Camera.Parameters cameraParameters;
-    private DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+    private CameraController mCameraController;
+    private Camera.Parameters mCameraParameters;
+    private DisplayMetrics mDisplayMetrics = getResources().getDisplayMetrics();
     private Camera.Size mPreviewSize;
     private Camera.Size mPictureSize;
 
     private GestureDetector mGestureDetector;
+    private ScaleGestureDetector mScaleGestureDetector;
 
 
     public CameraView(Context context) {
@@ -48,25 +48,26 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback {
         // Install a SurfaceHolder.Callback so we get notified when the
         // underlying surface is created and destroyed.
         mHolder = getHolder();
+        mHolder.addCallback(this);
         mGestureDetector = new GestureDetector(context, new CameraGestureListener());
-
+        mScaleGestureDetector = new ScaleGestureDetector(context, this);
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
-        cameraController = CameraController.getInstance();
-        cameraController.initCamera();
-        cameraParameters = cameraController.getCameraParameters();
-        float displayRatio = (float) Math.max(displayMetrics.widthPixels,displayMetrics.heightPixels) /
-                (float) Math.min(displayMetrics.widthPixels,displayMetrics.heightPixels);
+        mCameraController = CameraController.getInstance();
+        mCameraController.initCamera();
+        mCameraParameters = mCameraController.getCameraParameters();
+        float displayRatio = (float) Math.max(mDisplayMetrics.widthPixels,mDisplayMetrics.heightPixels) /
+                (float) Math.min(mDisplayMetrics.widthPixels,mDisplayMetrics.heightPixels);
 
-        mPreviewSize = cameraController.getOptimalSize(cameraParameters.getSupportedPreviewSizes(),
+        mPreviewSize = mCameraController.getOptimalSize(mCameraParameters.getSupportedPreviewSizes(),
                 this.getMeasuredWidth(), this.getMeasuredHeight(), displayRatio);
 
-        mPictureSize = cameraController.getOptimalSize(cameraParameters.getSupportedPictureSizes(),
+        mPictureSize = mCameraController.getOptimalSize(mCameraParameters.getSupportedPictureSizes(),
                 this.getMeasuredWidth(), this.getMeasuredHeight(), displayRatio);
         mHolder.addCallback(this);
-        cameraController.startPreview(surfaceHolder);
+        mCameraController.startPreview(surfaceHolder);
     }
 
     @Override
@@ -76,9 +77,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-        cameraController.stopPreview();
+        mCameraController.stopPreview();
         mHolder.removeCallback(this);
-        cameraController.closeCamera();
+        mCameraController.closeCamera();
         Log.d(TAG,"Surface Destroyed");
     }
 
@@ -89,19 +90,19 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback {
         }
 
         // stop preview before making changes
-        cameraController.stopPreview();
+        mCameraController.stopPreview();
 
         // set preview size and make any resize, rotate or
         // reformatting changes here
-        cameraController.setCameraOrientation(90);
-        cameraParameters.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
-        cameraParameters.setPictureSize(mPictureSize.width, mPictureSize.height);
+        mCameraController.setCameraOrientation(90);
+        mCameraParameters.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
+        mCameraParameters.setPictureSize(mPictureSize.width, mPictureSize.height);
         Log.d(TAG,"preview width: "+ mPreviewSize.width+" preview height: "+ mPreviewSize.height);
         Log.d(TAG,"photo width: "+ mPictureSize.width+" photo height: "+ mPictureSize.height);
-        cameraController.setCameraParameters(cameraParameters);
+        mCameraController.setCameraParameters(mCameraParameters);
         // start preview with new settings
         try {
-            cameraController.startPreview(mHolder);
+            mCameraController.startPreview(mHolder);
 
         } catch (Exception e){
             Log.d(TAG, "Error starting camera preview: " + e.getMessage());
@@ -110,8 +111,41 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     @Override
+    public boolean onScale(ScaleGestureDetector detector) {
+        int difference =  (int) detector.getCurrentSpan() -  (int) detector.getPreviousSpan();
+        Log.d("CameraScale","ScaleFactor: "+difference);
+        int maxZoom = mCameraParameters.getMaxZoom();
+        int zoom =  mCameraParameters.getZoom() + difference / (maxZoom / 5);
+        if (zoom > maxZoom) {
+            zoom = maxZoom;
+        } else if (zoom < 0) {
+            zoom = 0;
+        }
+
+        if (mCameraParameters.isZoomSupported()) {
+            mCameraParameters.setZoom(zoom);
+
+        }
+        Log.d("CameraScale","Zoom: "+mCameraParameters.getZoom());
+        mCameraController.setCameraParameters(mCameraParameters);
+        return true;
+    }
+
+    @Override
+    public boolean onScaleBegin(ScaleGestureDetector scaleGestureDetector) {
+        return true;
+    }
+
+    @Override
+    public void onScaleEnd(ScaleGestureDetector scaleGestureDetector) {
+
+    }
+
+    @Override
     public boolean onTouchEvent(MotionEvent event) {
-        return mGestureDetector.onTouchEvent(event);
+        mGestureDetector.onTouchEvent(event);
+        mScaleGestureDetector.onTouchEvent(event);
+        return true;
     }
 
     private class CameraGestureListener extends GestureDetector.SimpleOnGestureListener {
@@ -124,7 +158,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback {
         @Override
         public boolean onDoubleTap(MotionEvent e) {
             surfaceDestroyed(mHolder);
-            cameraController.switchCameraID();
+            mCameraController.switchCameraID();
             surfaceCreated(mHolder);
             resizeCamera();
             return true;
