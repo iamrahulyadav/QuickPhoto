@@ -151,6 +151,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     private class CameraGestureListener extends GestureDetector.SimpleOnGestureListener {
 
         @Override
+        public boolean onSingleTapConfirmed(MotionEvent e) {
+            mCameraController.takePicture(getContext());
+            return true;
+        }
+
+        @Override
         public boolean onDown(MotionEvent e) {
             return true;
         }

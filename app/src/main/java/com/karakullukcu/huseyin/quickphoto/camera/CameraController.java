@@ -1,9 +1,17 @@
 package com.karakullukcu.huseyin.quickphoto.camera;
 
+import android.app.Activity;
+import android.content.Context;
 import android.hardware.Camera;
+import android.os.Bundle;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.hardware.Camera.Size;
 import android.view.SurfaceHolder;
+
+import com.karakullukcu.huseyin.quickphoto.PhotoPreviewFragment;
+import com.karakullukcu.huseyin.quickphoto.R;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -99,6 +107,25 @@ public class CameraController {
     public void stopPreview() {
         if (mCamera != null)
             mCamera.stopPreview();
+    }
+
+    public void takePicture(final Context context) {
+        if (mCamera != null) {
+            mCamera.takePicture(null, null, new Camera.PictureCallback() {
+                @Override
+                public void onPictureTaken(byte[] bytes, Camera camera) {
+                    Bundle bundle = new Bundle();
+                    bundle.putByteArray(context.getString(R.string.image_as_byte_array),bytes);
+                    PhotoPreviewFragment photoPreviewFragment = new PhotoPreviewFragment();
+                    photoPreviewFragment.setArguments(bundle);
+                    AppCompatActivity activity = (AppCompatActivity) context;
+                    FragmentTransaction transaction = activity.getSupportFragmentManager().beginTransaction();
+                    transaction.replace(R.id.fragmentContainerLayout,photoPreviewFragment);
+                    transaction.addToBackStack(null);
+                    transaction.commit();
+                }
+            });
+        }
     }
 
     public Size getOptimalSize(List<Size> sizes, int width, int height, float ratio) {
