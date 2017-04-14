@@ -2,7 +2,6 @@ package com.karakullukcu.huseyin.quickphoto;
 
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -24,9 +23,8 @@ public class PhotoPreviewFragment extends Fragment {
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_photo_preview, container, false);
         ImageView imagePreviewView = (ImageView) rootView.findViewById(R.id.mainImageView);
-        byte[] imageAsByteArray = getArguments().getByteArray(getContext().getString(R.string.image_as_byte_array));
-        Bitmap imageAsBitmap = BitmapFactory.decodeByteArray(imageAsByteArray,0,imageAsByteArray.length);
-        imagePreviewView.setImageBitmap(imageAsBitmap);
+        Bitmap imageBitmap = getArguments().getParcelable(getString(R.string.taken_picture_bitmap));
+        imagePreviewView.setImageBitmap(imageBitmap);
 
         return rootView;
     }

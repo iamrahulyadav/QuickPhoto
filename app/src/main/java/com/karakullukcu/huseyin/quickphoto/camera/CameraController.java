@@ -1,7 +1,9 @@
 package com.karakullukcu.huseyin.quickphoto.camera;
 
-import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.support.v4.app.FragmentTransaction;
@@ -26,7 +28,7 @@ public class CameraController {
     private static final String TAG = CameraController.class.getName();
 
     private Camera mCamera;
-    private int cameraID = Camera.CameraInfo.CAMERA_FACING_BACK;
+    private boolean isFrontCamera = false;
     private Camera.Parameters mCameraParameters;
 
     private static CameraController instance;
@@ -43,7 +45,11 @@ public class CameraController {
     private Camera getCameraInstance() {
         Camera c = null;
         try {
-            c = Camera.open(cameraID);
+            if (isFrontCamera) {
+                c = Camera.open(Camera.CameraInfo.CAMERA_FACING_FRONT);
+            } else {
+                c = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
+            }
         } catch (Exception e) {
             Log.d(TAG,"Error opening camera");
             e.printStackTrace();
@@ -51,10 +57,6 @@ public class CameraController {
         return c;
     }
 
-    private Camera getCameraInstance(int cameraID) {
-        this.cameraID = cameraID;
-        return getCameraInstance();
-    }
 
     public void initCamera() {
         mCamera = getCameraInstance();
@@ -64,11 +66,7 @@ public class CameraController {
     }
 
     public void switchCameraID() {
-        if (cameraID == Camera.CameraInfo.CAMERA_FACING_BACK) {
-            cameraID = Camera.CameraInfo.CAMERA_FACING_FRONT;
-        } else {
-            cameraID = Camera.CameraInfo.CAMERA_FACING_BACK;
-        }
+        isFrontCamera = !isFrontCamera;
     }
 
     public Camera.Parameters getCameraParameters() {
@@ -114,8 +112,19 @@ public class CameraController {
             mCamera.takePicture(null, null, new Camera.PictureCallback() {
                 @Override
                 public void onPictureTaken(byte[] bytes, Camera camera) {
+                    Bitmap imageBitmap = BitmapFactory.decodeByteArray(bytes,0,bytes.length);
+                    Matrix matrix = new Matrix();
+                    if (isFrontCamera) {
+                        matrix.postRotate(-90);
+                        matrix.postScale(-1,1,imageBitmap.getWidth()/2f,imageBitmap.getHeight()/2f);
+                    } else {
+                        matrix.postRotate(90);
+                    }
+
+                    imageBitmap = Bitmap.createBitmap(imageBitmap, 0, 0, imageBitmap.getWidth(),
+                            imageBitmap.getHeight(), matrix, true);
                     Bundle bundle = new Bundle();
-                    bundle.putByteArray(context.getString(R.string.image_as_byte_array),bytes);
+                    bundle.putParcelable(context.getString(R.string.taken_picture_bitmap),imageBitmap);
                     PhotoPreviewFragment photoPreviewFragment = new PhotoPreviewFragment();
                     photoPreviewFragment.setArguments(bundle);
                     AppCompatActivity activity = (AppCompatActivity) context;

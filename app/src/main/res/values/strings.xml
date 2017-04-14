@@ -2,5 +2,5 @@
     <string name="app_name">Quick Photo</string>
 
     <!-- Bundle keys -->
-    <string name="image_as_byte_array">imageAsByteArray</string>
+    <string name="taken_picture_bitmap">takenPictureBitmap</string>
 </resources>
