@@ -3,4 +3,10 @@
 
     <!-- Bundle keys -->
     <string name="taken_picture_bitmap">takenPictureBitmap</string>
+    <string name="saved_left_margin">savedLeftMargin</string>
+    <string name="saved_bottom_margin">savedBottomMargin</string>
+    <string name="saved_text_size">savedTextSize</string>
+
+    <!-- Fragment keys -->
+    <string name="photo_preview_fragment_key">photoPreviewFragmentKey</string>
 </resources>

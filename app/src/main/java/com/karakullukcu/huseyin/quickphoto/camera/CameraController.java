@@ -129,7 +129,7 @@ public class CameraController {
                     photoPreviewFragment.setArguments(bundle);
                     AppCompatActivity activity = (AppCompatActivity) context;
                     FragmentTransaction transaction = activity.getSupportFragmentManager().beginTransaction();
-                    transaction.replace(R.id.fragmentContainerLayout,photoPreviewFragment);
+                    transaction.replace(R.id.fragmentContainerLayout,photoPreviewFragment,context.getString(R.string.photo_preview_fragment_key));
                     transaction.addToBackStack(null);
                     transaction.commit();
                 }
