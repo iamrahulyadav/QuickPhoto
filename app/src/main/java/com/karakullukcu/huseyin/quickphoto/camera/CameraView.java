@@ -67,6 +67,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         mPictureSize = mCameraController.getOptimalSize(mCameraParameters.getSupportedPictureSizes(),
                 this.getMeasuredWidth(), this.getMeasuredHeight(), displayRatio);
         mHolder.addCallback(this);
+
+        mCameraParameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+        mCameraParameters.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
+
         mCameraController.startPreview(surfaceHolder);
     }
 
