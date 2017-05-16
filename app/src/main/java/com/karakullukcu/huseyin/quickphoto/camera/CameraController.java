@@ -15,6 +15,8 @@ import android.view.SurfaceHolder;
 import com.karakullukcu.huseyin.quickphoto.PhotoPreviewFragment;
 import com.karakullukcu.huseyin.quickphoto.R;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -121,12 +123,28 @@ public class CameraController {
                         matrix.postRotate(90);
                     }
 
-                    imageBitmap = Bitmap.createBitmap(imageBitmap, 0, 0, imageBitmap.getWidth(),
+                    Bitmap correctedBitmap = Bitmap.createBitmap(imageBitmap, 0, 0, imageBitmap.getWidth(),
                             imageBitmap.getHeight(), matrix, true);
-                    Bundle bundle = new Bundle();
-                    bundle.putParcelable(context.getString(R.string.taken_picture_bitmap),imageBitmap);
+                    imageBitmap.recycle();
+                    FileOutputStream fos = null;
+
+                    try {
+                        fos = context.openFileOutput(context.getString(R.string.image_name_for_storage)
+                                ,Context.MODE_PRIVATE);
+                        correctedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        try {
+                            if (fos != null) {
+                                fos.close();
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
                     PhotoPreviewFragment photoPreviewFragment = new PhotoPreviewFragment();
-                    photoPreviewFragment.setArguments(bundle);
                     AppCompatActivity activity = (AppCompatActivity) context;
                     FragmentTransaction transaction = activity.getSupportFragmentManager().beginTransaction();
                     transaction.replace(R.id.fragmentContainerLayout,photoPreviewFragment,context.getString(R.string.photo_preview_fragment_key));

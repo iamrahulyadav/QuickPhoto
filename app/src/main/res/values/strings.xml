@@ -9,4 +9,7 @@
 
     <!-- Fragment keys -->
     <string name="photo_preview_fragment_key">photoPreviewFragmentKey</string>
+
+    <!-- Internal storage image name -->
+    <string name="image_name_for_storage">takenImage</string>
 </resources>

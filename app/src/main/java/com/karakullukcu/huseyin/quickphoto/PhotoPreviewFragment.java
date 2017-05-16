@@ -3,6 +3,7 @@ package com.karakullukcu.huseyin.quickphoto;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Rect;
@@ -96,7 +97,15 @@ public class PhotoPreviewFragment extends Fragment implements GestureDetector.On
             imageBitmap.recycle();
             imageBitmap = null;
         }
-        imageBitmap = getArguments().getParcelable(getString(R.string.taken_picture_bitmap));
+        try {
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inMutable = true;
+            options.inBitmap = imageBitmap;
+            imageBitmap = BitmapFactory.decodeStream(getContext().openFileInput(getString(R.string.image_name_for_storage))
+                    ,null,options);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
 
         Display display = getActivity().getWindowManager().getDefaultDisplay();
@@ -225,6 +234,7 @@ public class PhotoPreviewFragment extends Fragment implements GestureDetector.On
             MediaScannerConnection.scanFile(mContext.get(),
                     new String[] {imageFile},
                     new String[] { "image/jpeg" }, null);
+            mContext.get().deleteFile(mContext.get().getString(R.string.image_name_for_storage));
             // Release the memory
             System.gc();
         }
