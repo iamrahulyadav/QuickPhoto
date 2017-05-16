@@ -1,13 +1,20 @@
 package com.karakullukcu.huseyin.quickphoto;
 
 
+import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Rect;
+import android.media.MediaScannerConnection;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Display;
 import android.view.GestureDetector;
@@ -19,9 +26,15 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import com.karakullukcu.huseyin.quickphoto.view.DescriptionEditText;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.util.Date;
 
 public class PhotoPreviewFragment extends Fragment implements GestureDetector.OnGestureListener,
     View.OnTouchListener {
@@ -127,9 +140,94 @@ public class PhotoPreviewFragment extends Fragment implements GestureDetector.On
             }
         });
 
+        FloatingActionButton savePhotoButton = (FloatingActionButton) rootView.findViewById(R.id.saveActionButton);
+        savePhotoButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
 
+                if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
+                    new SaveImageTask(getContext()).execute();
+                } else {
+                    Toast.makeText(getContext(), "Storage not mounted", Toast.LENGTH_SHORT).show();
+                }
+                getActivity().getSupportFragmentManager().popBackStack();
+
+            }
+        });
 
         return rootView;
+    }
+
+    /*
+     * Simple thread for writing image to the primary storage.
+     */
+    private class SaveImageTask extends AsyncTask<Void,Void,String> {
+        private WeakReference<Context> mContext;
+        private SaveImageTask(Context context) {
+            super();
+            mContext = new WeakReference<>(context.getApplicationContext());
+        }
+
+        @Override
+        protected void onPreExecute() {
+            // We scale our description edit text and combine with actual photo
+            float xRatio = (float) imageBitmap.getWidth() / (float) mDisplayMetrics.widthPixels;
+            float yRatio = (float) imageBitmap.getHeight() / (float) mDisplayMetrics.heightPixels;
+
+            Canvas canvas = new Canvas(imageBitmap);
+
+            canvas.save();
+            canvas.translate(mDescriptionEditText.getX() * xRatio ,mDescriptionEditText.getY() * yRatio);
+            canvas.scale(xRatio,yRatio);
+            mDescriptionEditText.draw(canvas);
+            canvas.restore();
+            canvas = null;
+        }
+
+        @Override
+        protected String doInBackground(Void... params) {
+
+            File path = new File(Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_PICTURES), "QuickPhoto");
+            if (!path.exists()) {
+                if(!path.mkdirs()) {
+                    Log.e("Tag","File not created");
+                }
+            }
+
+            File imageFile = new File(path,"QP_"+new Date().getTime()+".jpg");
+
+            FileOutputStream fos = null;
+            try {
+                fos = new FileOutputStream(imageFile);
+                imageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+                fos.flush();
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    if (fos != null) {
+                        fos.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                imageBitmap.recycle();
+                imageBitmap = null;
+            }
+            return imageFile.toString();
+        }
+
+        @Override
+        protected void onPostExecute(String imageFile) {
+            // We scan our image so it shows in gallery app
+            Toast.makeText(mContext.get(), "Image saved", Toast.LENGTH_SHORT).show();
+            MediaScannerConnection.scanFile(mContext.get(),
+                    new String[] {imageFile},
+                    new String[] { "image/jpeg" }, null);
+            // Release the memory
+            System.gc();
+        }
     }
 
     private void toggleWriting() {
